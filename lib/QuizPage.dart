@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:quiz_app/questions.dart';
-import 'package:search_highlight_text/search_highlight_text.dart';
-
 
 class QuizPage extends StatefulWidget {
   const QuizPage({super.key});
@@ -23,13 +21,26 @@ class _QuizPageState extends State<QuizPage> {
     foundTrue = 0;
     foundFalse = 0;
 
+    List<String> searchWords = searchedValue.split(" ").map((word) => word.trim()).toList();
+
     for (int index = 0; index < questions.length; index++) {
-      if ((questions[index]['question']).toString().toLowerCase().contains(searchedValue)) {
+      String questionText = questions[index]['question'].toString().toLowerCase();
+      bool containsAllWords = true;
+
+      for (String searchWord in searchWords) {
+        if (!questionText.contains(searchWord)) {
+          containsAllWords = false;
+          break; // If any word is not found, exit the inner loop
+        }
+      }
+
+      if (containsAllWords) {
         totalFound++;
         questions[index]['answer'] == 'F' ? foundFalse++ : foundTrue++;
       }
     }
   }
+
 
   void searchButtonPressed() {
     updateCounts(searchController.text);
@@ -39,142 +50,144 @@ class _QuizPageState extends State<QuizPage> {
   @override
   Widget build(BuildContext context) {
     var controller = searchController;
-    return SearchTextInheritedWidget(
-      searchText: searchController.text,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'Quiz Page',
-            style: TextStyle(color: Colors.white),
-          ),
-          backgroundColor: Colors.purple,
-          centerTitle: true,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Quiz Page',
+          style: TextStyle(color: Colors.white),
         ),
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: controller,
-                      decoration: const InputDecoration(
-                        hintText: 'Search...',
-                        prefixIcon: Icon(Icons.search),
-                      ),
-                      onChanged: (value){
-                        if(controller.text.isEmpty){
-                          totalFound = 0;
-                          foundTrue = 0;
-                          foundFalse = 0;
-                          setState(() {
-
-                          });
-                        }
-                      },
+        backgroundColor: Colors.purple,
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      hintText: 'Search...',
+                      prefixIcon: Icon(Icons.search),
                     ),
+                    onChanged: (value) {
+                      if (controller.text.isEmpty) {
+                        totalFound = 0;
+                        foundTrue = 0;
+                        foundFalse = 0;
+                        searchController.clear();
+                        searchedValue = value;
+                        setState(() {});
+                      }
+                    },
                   ),
-                  Column(
-                    children: [
-                      Container(
-                        width: 100,
-                        margin: const EdgeInsets.only(left: 10,bottom: 10),
-                        decoration: const BoxDecoration(color: Colors.purple),
-                        child: TextButton(
-                          onPressed: searchButtonPressed,
-                          child: const Text(
-                            'Search',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ),
-                      Container(
-                        width: 100,
-                        margin: const EdgeInsets.only(left: 10),
-                        decoration: const BoxDecoration(color: Colors.purple),
-                        child: TextButton(
-                          child: const Text(
-                            'Clear',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          onPressed: () {
-                            controller.clear();
-                            setState(() {
-                              searchedValue = '';
-                              totalFound = 0;
-                              foundTrue = 0;
-                              foundFalse = 0;
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-
-                ],
-              ),
-            ),
-            RichText(
-              text: TextSpan(
-                text: '${totalFound.toString()} question found  ',
-                style: const TextStyle(
-                  color: Colors.black,
                 ),
-                children: [
-                  TextSpan(
-                    text: '${foundFalse.toString()} false  ',
-                    style: const TextStyle(
-                      color: Colors.red,
+                Column(
+                  children: [
+                    Container(
+                      width: 100,
+                      margin: const EdgeInsets.only(left: 10, bottom: 10),
+                      decoration: const BoxDecoration(color: Colors.purple),
+                      child: TextButton(
+                        onPressed: searchButtonPressed,
+                        child: const Text(
+                          'Search',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
                     ),
-                  ),
-                  TextSpan(
-                    text: '${foundTrue.toString()} veri',
-                    style: const TextStyle(
-                      color: Colors.green,
+                    Container(
+                      width: 100,
+                      margin: const EdgeInsets.only(left: 10),
+                      decoration: const BoxDecoration(color: Colors.purple),
+                      child: TextButton(
+                        child: const Text(
+                          'Clear',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        onPressed: () {
+                          controller.clear();
+                          setState(() {
+                            searchedValue = '';
+                            totalFound = 0;
+                            foundTrue = 0;
+                            foundFalse = 0;
+                          });
+                        },
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: questions.length,
-                itemBuilder: (context, index) {
-                  if (searchController.text.isEmpty) {
-                    print(questions.length);
-                    return QuizWidget(
-                        highlightedText: searchedValue,
-                        question: (questions[index]['question']).toString(),
-                        answer: (questions[index]['answer']).toString(),
-                        image:  (questions[index]['image']).toString()
-                    );
-                  } else if (((questions[index]['question']).toString())
-                      .toLowerCase()
-                      .contains(searchedValue.toLowerCase())) {
-                    return QuizWidget(
-                      highlightedText: searchedValue,
-                      question: (questions[index]['question']).toString(),
-                      answer: (questions[index]['answer']).toString(),
-                      image: (questions[index]['image']).toString(),
-                    );
-                  } else {
-                    return Container();
+          ),
+          RichText(
+            text: TextSpan(
+              text: '${totalFound.toString()} question found  ',
+              style: const TextStyle(
+                color: Colors.black,
+              ),
+              children: [
+                TextSpan(
+                  text: '${foundFalse.toString()} false  ',
+                  style: const TextStyle(
+                    color: Colors.red,
+                  ),
+                ),
+                TextSpan(
+                  text: '${foundTrue.toString()} veri',
+                  style: const TextStyle(
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: questions.length,
+              itemBuilder: (context, index) {
+                final question = questions[index]['question'].toString();
+                final answer = questions[index]['answer'].toString();
+                final image = questions[index]['image'].toString();
+
+                final questionText = question.toLowerCase();
+                final searchText = searchedValue.toLowerCase();
+                final searchWords = searchText.split(" ").map((word) => word.trim()).toList();
+
+                // Check if all search words are present in the question text
+                bool containsAllWords = true;
+                for (String searchWord in searchWords) {
+                  if (!questionText.contains(searchWord)) {
+                    containsAllWords = false;
+                    break; // If any word is not found, exit the loop
                   }
-                },
-              ),
+                }
+
+                if (searchText.isEmpty || containsAllWords) {
+                  return QuizWidget(
+                    question: question,
+                    answer: answer,
+                    image: image,
+                    highlightedText: searchedValue,
+                  );
+                } else {
+                  // If the question does not match the search criteria, return an empty container
+                  return Container();
+                }
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-
 class QuizWidget extends StatefulWidget {
-
   QuizWidget({
     super.key,
     required this.question,
@@ -186,7 +199,6 @@ class QuizWidget extends StatefulWidget {
   final String answer;
   String? image;
   final String highlightedText;
-
 
   @override
   State<QuizWidget> createState() => _QuizWidgetState();
@@ -212,9 +224,12 @@ class _QuizWidgetState extends State<QuizWidget> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             widget.image.toString() == "noImage"
-                ? Container(width: 100,height: 100,color: Colors.white,)
-                :
-            Container(width:100,height: 100,child: Image(image: AssetImage(widget.image.toString()))),
+                ? Container(width: 100, height: 100, color: Colors.white)
+                : Container(
+              width: 100,
+              height: 100,
+              child: Image(image: AssetImage(widget.image.toString())),
+            ),
             const SizedBox(
                 width:
                 16.0), // Add spacing between icon and text
@@ -223,21 +238,8 @@ class _QuizWidgetState extends State<QuizWidget> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   widget.highlightedText.isEmpty
-                      ? Text(widget
-                      .question) // Display the entire question if no search term
-                      : SearchHighlightText(
-                    widget.question,
-                    style: const TextStyle(
-                      fontSize: 16.0,
-                      color: Colors.black, // Highlight color
-                    ),
-                    highlightStyle: const TextStyle(
-                      fontSize: 16.0,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      backgroundColor: Colors.pink,
-                    ),
-                  ),
+                      ? Text(widget.question)
+                      : highlightText(widget.question, widget.highlightedText),
                 ],
               ),
             ),
@@ -271,4 +273,51 @@ class _QuizWidgetState extends State<QuizWidget> {
       ),
     );
   }
+
+  Widget highlightText(String sentence, String query) {
+    // Split the query into lowercase words and remove leading/trailing spaces
+    print("Query: $query");
+    List<String> queryWords = query.toLowerCase().trim().split(" ");
+    print("Query Words: $queryWords");
+
+    List<TextSpan> textSpans = [];
+    List<String> sentenceWords = sentence.toLowerCase().split(" ");
+
+    for (String sentenceWord in sentenceWords) {
+      final wordLower = sentenceWord.trim().toLowerCase();
+
+      // Check if the word contains any of the query words
+      bool isHighlighted = queryWords.any((queryWord) => wordLower.contains(queryWord));
+
+      if (isHighlighted) {
+        textSpans.add(
+          TextSpan(
+            text: sentenceWord,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              backgroundColor: Colors.pink,
+            ),
+          ),
+        );
+      } else {
+        textSpans.add(
+          TextSpan(
+            text: sentenceWord,
+          ),
+        );
+      }
+
+      textSpans.add(const TextSpan(text: ' ')); // Add a space between words.
+    }
+
+    return RichText(
+      text: TextSpan(
+        children: textSpans,
+        style: const TextStyle(color: Colors.black),
+      ),
+    );
+  }
+
+
 }
